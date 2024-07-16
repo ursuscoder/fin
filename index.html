@@ -153,6 +153,8 @@
             const expenseMatch = qr.match(/s=([\d.]+)/);
             const expense = expenseMatch ? expenseMatch[1] : '0';  // Извлекаем сумму из QR
             const category = categorySelect.options[categorySelect.selectedIndex].text;
+
+            sendData(qr, expense, category);
             return true
         }
 
