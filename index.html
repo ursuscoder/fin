@@ -63,8 +63,8 @@
             <input type="text" id="text-input" placeholder="Введите текст">
             <button id="send-button" onclick="handleSend()">Отправить</button>
             <select id="category-select">
-                <option value="food">Еда</option>
                 <option value="apartment">Квартира</option>
+                <option value="food">Еда</option>
                 <option value="entertainment">Развлечения / свидания</option>
             </select>
         </div>
@@ -79,10 +79,10 @@
             };
 
             try {
-                const response = await fetch('https://script.google.com/macros/s/AKfycbxCWNAHD66JqtagR40fRL59CT6aonJK_EPfcY_yy-ttMsk9IQ1yyemIX-V6c3zczcbT/exec', {
+                const response = await fetch('https://script.google.com/macros/s/AKfycbwdF11Isz3MhJ0CXzYr4_yCBpwP405DhjDpPYLtJBwfP7lMlO46aSZtWH1a9vKVq2qw/exec', {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        "Content-Type": "text/plain;charset=utf-8",
                     },
                     body: JSON.stringify(data)
                 });
@@ -90,7 +90,8 @@
                 if (response.ok) {
                     Telegram.WebApp.showAlert('Успешно');
                 } else {
-                    Telegram.WebApp.showAlert('Ошибка при отправке данных');
+                    const errorText = await response.text();
+                    Telegram.WebApp.showAlert('Ошибка при отправке данных: ' + errorText);
                 }
             } catch (error) {
                 Telegram.WebApp.showAlert('Ошибка: ' + error.message);
@@ -100,8 +101,9 @@
         function handleSend() {
             const textInput = document.getElementById("text-input");
             const categorySelect = document.getElementById("category-select");
-            const qr = ""
-            const expense = textInput.value;
+            const qr = textInput.value;  // Используем значение текстового поля как QR
+            const expenseMatch = qr.match(/s=([\d.]+)/);
+            const expense = expenseMatch ? expenseMatch[1] : '0';  // Извлекаем сумму из QR
             const category = categorySelect.options[categorySelect.selectedIndex].text;
 
             sendData(qr, expense, category);
@@ -144,14 +146,23 @@
         };
 
         function qrTextReceived(data) {
-            const textInput = document.getElementById("text-input");
-            const categorySelect = document.getElementById("category-select");
-            const qr = data
-            const expense = qr.match(/s=([\d.]+)/)[1];  // Извлекаем сумму из QR
-            const category = categorySelect.options[categorySelect.selectedIndex].text;
-
-            sendData(qr, expense, category);
-
+            var text = data
+            if (text.startsWith("http")) {
+                Telegram.WebApp.showPopup({
+                    title: 'Обнаружен сайт',
+                    message: text,
+                    buttons: [
+                        { id: 'link', type: 'destructive', text: 'Открыть' }
+                    ]
+                }, function (btn) {
+                    if (btn === 'link') {
+                        Telegram.WebApp.openLink(text, { try_instant_view: true });
+                    }
+                });
+            }
+            else {
+                Telegram.WebApp.showAlert(text)
+            }
             return true
         }
 
